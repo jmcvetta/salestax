@@ -1,4 +1,4 @@
 salestax
 ========
 
-Solution to inane programming "challenge"
+Solution to programming "challenge"
