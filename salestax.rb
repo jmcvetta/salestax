@@ -1,6 +1,8 @@
 # Copyright (c) 2012 Jason McVetta.  This is Free Software, released under the
 # terms of the AGPL v3.  See www.gnu.org/licenses/agpl-3.0.html for details.
 #
+#-------------------------------------------------------------------------------
+#
 # USAGE:
 # 
 #     ruby salestax.rb /path/to/datafile
@@ -11,17 +13,16 @@
 #
 # Data file format is one sku per line - quantities greater than 1 are expressed by the 
 # same skew repeated on multiple lines.
+#
+#-------------------------------------------------------------------------------
 
 SALES_TAX_RATE = 0.10  # 10% tax on most sales
 IMPORT_TAX_RATE = 0.05 # 5% tax on all imports
 
-
-#
-# Realistically the product catalog, as well as the list tax exempt categories 
+# Realistically the product catalog, as well as the list of tax exempt categories 
 # below, would be stored in a database.
-#
 PRODUCT_CATALOG = {
-  # sku = properties
+  # sku => properties
   "10001" => {
     "name" => "Getting the Most Out of Your Asparagus",
     "category" => "book",
@@ -158,6 +159,9 @@ class ShoppingCart
   end
   
   def add(sku, quantity)
+    # In a production system, MerchandiseItem might be an ActiveRecord class 
+    # or similar.  We would query the DB here and get a valid instance or a 
+    # does not exist error.  
     item = MerchandiseItem.new(sku)
     @items[item] += 1
   end
