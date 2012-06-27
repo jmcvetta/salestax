@@ -1,6 +1,7 @@
 # Copyright (c) 2012 Jason McVetta.  This is Free Software, released under the
 # terms of the AGPL v3.  See www.gnu.org/licenses/agpl-3.0.html for details.
 
+require "optparse"
 
 SALES_TAX_RATE = 0.10  # 10% tax on most sales
 IMPORT_TAX_RATE = 0.05 # 5% tax on all imports
@@ -87,8 +88,9 @@ class MerchandiseItem
   attr_reader :imported
   
   def initialize(sku)
+    sku = sku.to_s
     if not PRODUCT_CATALOG.has_key?(sku)
-      raise "Sku not found in catalog"
+      raise "Sku #{sku} not found in catalog"
     end
     item = PRODUCT_CATALOG[sku]
     @sku = sku
@@ -98,8 +100,16 @@ class MerchandiseItem
     @imported = item["imported"]
   end
   
-  def <=>(another)
-    @sku <=> another.sku
+  def <=>(other)
+    @sku <=> other.sku
+  end
+  
+  def eql?(other)
+    @sku <=> other.sku
+  end
+  
+  def hash
+    @sku.hash
   end
   
   def tax
@@ -120,12 +130,12 @@ class MerchandiseItem
   end
   
   def to_s
-    "(%-10s) %-54s: %7s" % [@category, @name, @price]
+    "(%-10s) %-54s: %7.2f" % [@category, @name, @price]
   end
 end
 
- # A very simple shopping cart
-class ShoppingCart 
+ # A very simple shopping cart class ShoppingCart 
+ class ShoppingCart
   def initialize()
     @items = Hash.new(0)
   end
@@ -166,13 +176,15 @@ class ShoppingCart
     }
   #puts "Sales Taxes: #{tax}"
   puts "-" * 80
-  puts "Sales Taxes:                                                             %7s" % tax
-  puts "Total:                                                                   %7s" % total
+  puts "Sales Taxes:                                                             %7.2f" % tax
+  puts "Total:                                                                   %7.2f" % total
   end
 end
 
 
 def example
+  puts "+" * 80
+  puts
   puts "EXAMPLE 1:"
   puts
   cart = ShoppingCart.new
@@ -203,4 +215,31 @@ def example
   puts
 end
 
-example
+
+options = {}
+OptionParser.new do |opts|
+  opts.banner = "Usage: salestax.rb [options] [file]"
+
+  opts.on("-e", "--example", "Run example") do |v|
+    #options[:verbose] = v
+    example
+    exit
+  end
+end.parse!
+
+# If an argument is specified, is assumed to be the path to a data file.  File 
+# contains one sku per line - quantities greater than 1 are expressed by 
+# multiple lines with the same sku.
+if ARGV.size > 0
+  cart = ShoppingCart.new
+  file = File.new(ARGV[0], "r")
+  while (line = file.gets)
+    sku = line.strip
+    cart.add(sku, 1)
+  end
+  file.close
+  cart.receipt
+else
+  puts "Must specify either a data file or --example."
+end
+
