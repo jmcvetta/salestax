@@ -1,7 +1,16 @@
 # Copyright (c) 2012 Jason McVetta.  This is Free Software, released under the
 # terms of the AGPL v3.  See www.gnu.org/licenses/agpl-3.0.html for details.
-
-require "optparse"
+#
+# USAGE:
+# 
+#     ruby salestax.rb /path/to/datafile
+#
+# or to see an example:
+#
+#     ruby salestax.rb --example
+#
+# Data file format is one sku per line - quantities greater than 1 are expressed by the 
+# same skew repeated on multiple lines.
 
 SALES_TAX_RATE = 0.10  # 10% tax on most sales
 IMPORT_TAX_RATE = 0.05 # 5% tax on all imports
@@ -69,12 +78,16 @@ PRODUCT_CATALOG = {
   },
 }
 
+# Categories in this list are exempt from sales (but not import) tax.
 TAX_EXEMPT = [
   "book",
   "medical",
   "food",
 ]
 
+
+
+require "optparse"
 
 # An item of merchandise that can be added to the Shopping Cart
 class MerchandiseItem
@@ -120,9 +133,13 @@ class MerchandiseItem
     end
     # Sales Tax
     if not TAX_EXEMPT.include?(@category)
-      tax += @price * 0.10
+      tax += @price * SALES_TAX_RATE
     end
-    return tax.round(2)
+    #
+    # Round up to the nearext $0.05
+    #
+    tax = (tax*20.0).ceil / 20.0 # (1/0.05 = 20)
+    return tax
   end
   
   def total
@@ -134,8 +151,8 @@ class MerchandiseItem
   end
 end
 
- # A very simple shopping cart class ShoppingCart 
- class ShoppingCart
+# A very simple shopping cart class ShoppingCart 
+class ShoppingCart
   def initialize()
     @items = Hash.new(0)
   end
@@ -216,30 +233,34 @@ def example
 end
 
 
-options = {}
-OptionParser.new do |opts|
-  opts.banner = "Usage: salestax.rb [options] [file]"
-
-  opts.on("-e", "--example", "Run example") do |v|
-    #options[:verbose] = v
-    example
-    exit
+def main
+  options = {}
+  OptionParser.new do |opts|
+    opts.banner = "Usage: salestax.rb [options] [file]"
+  
+    opts.on("-e", "--example", "Run example") do |v|
+      #options[:verbose] = v
+      example
+      exit
+    end
+  end.parse!
+  # If an argument is specified, is assumed to be the path to a data file.  File 
+  # contains one sku per line - quantities greater than 1 are expressed by the 
+  # same skew repeated on multiple lines.
+  if ARGV.size > 0
+    cart = ShoppingCart.new
+    file = File.new(ARGV[0], "r")
+    while (line = file.gets)
+      sku = line.strip
+      cart.add(sku, 1)
+    end
+    file.close
+    cart.receipt
+  else
+    puts "Must specify either a data file or --example."
   end
-end.parse!
+end  
 
-# If an argument is specified, is assumed to be the path to a data file.  File 
-# contains one sku per line - quantities greater than 1 are expressed by 
-# multiple lines with the same sku.
-if ARGV.size > 0
-  cart = ShoppingCart.new
-  file = File.new(ARGV[0], "r")
-  while (line = file.gets)
-    sku = line.strip
-    cart.add(sku, 1)
-  end
-  file.close
-  cart.receipt
-else
-  puts "Must specify either a data file or --example."
+if __FILE__ == $PROGRAM_NAME
+  main
 end
-
