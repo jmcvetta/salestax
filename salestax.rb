@@ -2,27 +2,14 @@
 # terms of the AGPL v3.  See www.gnu.org/licenses/agpl-3.0.html for details.
 
 
-# Input 1:
-# 1 book at 12.49
-# 1 music CD at 14.99
-# 1 chocolate bar at 0.85
-# 
-# Input 2:
-# 1 imported box of chocolates at 10.00
-# 1 imported bottle of perfume at 47.50
-# 
-# Input 3:
-# 1 imported bottle of perfume at 27.99
-# 1 bottle of perfume at 18.99
-# 1 packet of headache pills at 9.75
-# 1 box of imported chocolates at 11.25
+SALES_TAX_RATE = 0.10  # 10% tax on most sales
+IMPORT_TAX_RATE = 0.05 # 5% tax on all imports
 
-TAX_EXEMPT = [
-  "book",
-  "medical",
-  "food",
-]
 
+#
+# Realistically the product catalog, as well as the list tax exempt categories 
+# below, would be stored in a database.
+#
 PRODUCT_CATALOG = {
   # sku = properties
   "10001" => {
@@ -33,7 +20,7 @@ PRODUCT_CATALOG = {
   },
   "10002" => {
     "name" => "Metalica Sings Christmas Carols",
-    "category" => "cd",
+    "category" => "music",
     "price" => 14.99,
     "imported" => false,
   },
@@ -81,19 +68,41 @@ PRODUCT_CATALOG = {
   },
 }
 
+TAX_EXEMPT = [
+  "book",
+  "medical",
+  "food",
+]
+
+
+# An item of merchandise that can be added to the Shopping Cart
 class MerchandiseItem
-  def initialize(sku, quanitty)
-    if not PRODUCT_CATALOG.has_key(sku)
+
+  include Comparable
+  
+  attr_reader :sku
+  attr_reader :name
+  attr_reader :category
+  attr_reader :price
+  attr_reader :imported
+  
+  def initialize(sku)
+    if not PRODUCT_CATALOG.has_key?(sku)
       raise "Sku not found in catalog"
     end
     item = PRODUCT_CATALOG[sku]
     @sku = sku
+    @name = item["name"]
     @category = item["category"]
     @price = item["price"]
     @imported = item["imported"]
   end
   
-  def taxPerItem
+  def <=>(another)
+    @sku <=> another.sku
+  end
+  
+  def tax
     tax = 0
     # Import Duty
     if @imported
@@ -103,21 +112,95 @@ class MerchandiseItem
     if not TAX_EXEMPT.include?(@category)
       tax += @price * 0.10
     end
-    return tax
+    return tax.round(2)
+  end
+  
+  def total
+    @price + tax
+  end
+  
+  def to_s
+    "(%-10s) %-54s: %7s" % [@category, @name, @price]
   end
 end
 
+ # A very simple shopping cart
 class ShoppingCart 
   def initialize()
-    @items = []
+    @items = Hash.new(0)
   end
   
   def add(sku, quantity)
-    for i in 1..quantity do
-      @items += [item]
-    end
-    puts "Added (#{quantity}) item #{sku} to cart."
+    item = MerchandiseItem.new(sku)
+    @items[item] += 1
   end
   
-  def 
+  # Sum of pre-tax prices on all items
+  def subtotal
+    sum = 0
+    @items.each_pair { |item, quantity|
+      sum += item.price * quantity   
+    }
+    return sum.round(2)
+  end
+  
+  # Sum of tax on all items
+  def tax
+    sum = 0
+    @items.each_pair { |item, quantity|
+      sum += item.tax * quantity   
+    }
+    return sum.round(2)
+  end
+  
+  def total
+    total = subtotal + tax
+    return total.round(2)
+  end
+  
+  # Prints receipt
+  def receipt
+    @items.each_pair { |item, quantity|
+      #puts "#{quantity} #{item}"
+      puts "%3s %s" % [quantity, item]
+    }
+  #puts "Sales Taxes: #{tax}"
+  puts "-" * 80
+  puts "Sales Taxes:                                                             %7s" % tax
+  puts "Total:                                                                   %7s" % total
+  end
 end
+
+
+def example
+  puts "EXAMPLE 1:"
+  puts
+  cart = ShoppingCart.new
+  cart.add("10001", 1)
+  cart.add("10002", 1)
+  cart.add("10003", 1)
+  cart.receipt
+  puts
+  puts "+" * 80
+  puts
+  puts "EXAMPLE 2:"
+  puts
+  cart = ShoppingCart.new
+  cart.add("10004", 1)
+  cart.add("10005", 1)
+  cart.receipt
+  puts
+  puts "+" * 80
+  puts
+  puts "EXAMPLE 3:"
+  puts
+  cart = ShoppingCart.new
+  cart.add("10006", 1)
+  cart.add("10007", 1)
+  cart.add("10008", 1)
+  cart.add("10009", 1)
+  cart.receipt
+  puts
+end
+
+example
