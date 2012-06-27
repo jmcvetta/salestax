@@ -25,8 +25,8 @@ class TestSalesTax  < Test::Unit::TestCase
     cart.add("10001", 1)
     cart.add("10002", 1)
     cart.add("10003", 1)
-    assert_equal cart.tax, 1.50
-    assert_equal cart.total, 29.83
+    assert_equal 1.50, cart.tax
+    assert_equal 29.83, cart.total 
   end
   
   def test_2
@@ -42,8 +42,8 @@ class TestSalesTax  < Test::Unit::TestCase
     cart = ShoppingCart.new
     cart.add("10004", 1)
     cart.add("10005", 1)
-    assert_equal cart.tax, 7.65
-    assert_equal cart.total, 65.15
+    assert_equal 7.65, cart.tax
+    assert_equal 65.15, cart.total
   end
   
   def test_3
@@ -65,8 +65,8 @@ class TestSalesTax  < Test::Unit::TestCase
     cart.add("10007", 1)
     cart.add("10008", 1)
     cart.add("10009", 1)
-    assert_equal cart.tax, 6.70
-    assert_equal cart.total, 74.68
+    assert_equal 6.70, cart.tax 
+    assert_equal 74.68, cart.total
   end
   
 end
