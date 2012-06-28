@@ -172,7 +172,7 @@ class ShoppingCart
     @items.each_pair { |item, quantity|
       sum += item.price * quantity   
     }
-    return sum.round(2)
+    return sum
   end
   
   # Sum of tax on all items
@@ -181,12 +181,12 @@ class ShoppingCart
     @items.each_pair { |item, quantity|
       sum += item.tax * quantity   
     }
-    return sum.round(2)
+    return sum
   end
   
   def total
     total = subtotal + tax
-    return total.round(2)
+    return total
   end
   
   # Prints receipt
